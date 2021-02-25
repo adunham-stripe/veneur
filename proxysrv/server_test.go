@@ -189,7 +189,7 @@ func TestCountActiveHandlers(t *testing.T) {
 			tick := time.NewTicker(10 * time.Nanosecond)
 			defer tick.Stop()
 
-			timeout := time.NewTicker(3 * time.Second)
+			timeout := time.NewTicker(10 * time.Second)
 			defer timeout.Stop()
 			for int64(n) != atomic.LoadInt64(s.activeProxyHandlers) {
 				select {
@@ -206,7 +206,7 @@ func TestCountActiveHandlers(t *testing.T) {
 
 			// Stop all of the servers and check that the counter goes to zero
 			close(done)
-			timeout = time.NewTicker(3 * time.Second)
+			timeout = time.NewTicker(10 * time.Second)
 			defer timeout.Stop()
 			for atomic.LoadInt64(s.activeProxyHandlers) != 0 {
 				select {
