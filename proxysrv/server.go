@@ -180,6 +180,8 @@ func (s *Server) SetDestinations(dests *consistent.Consistent) error {
 func (s *Server) SendMetrics(ctx context.Context, mlist *forwardrpc.MetricList) (*empty.Empty, error) {
 	go func() {
 		// Track the number of active goroutines in a counter
+		println("SendMetrics goroutine running")
+		defer println("SendMetrics goroutine finished")
 		atomic.AddInt64(s.activeProxyHandlers, 1)
 		_ = s.sendMetrics(context.Background(), mlist)
 		atomic.AddInt64(s.activeProxyHandlers, -1)
@@ -223,6 +225,8 @@ func (s *Server) sendMetrics(ctx context.Context, mlist *forwardrpc.MetricList) 
 
 	for dest, batch := range dests {
 		go func(dest string, batch []*metricpb.Metric) {
+			println("sendMetrics: forwarding to:", dest)
+			defer println("sendMetrics: done forwarding to:", dest)
 			defer wg.Done()
 			if err := s.forward(ctx, dest, batch); err != nil {
 				msg := fmt.Sprintf("failed to forward to the host '%s'", dest)
@@ -233,7 +237,9 @@ func (s *Server) sendMetrics(ctx context.Context, mlist *forwardrpc.MetricList) 
 	}
 
 	go func() {
+		println("sendMetrics: waiting for forwarding goroutines")
 		wg.Wait() // Wait for all the above goroutines to complete
+		println("sendMetrics: forwarding goroutines done")
 		close(errCh)
 	}()
 
@@ -254,6 +260,7 @@ func (s *Server) sendMetrics(ctx context.Context, mlist *forwardrpc.MetricList) 
 		"duration": time.Since(span.Start),
 	})
 
+	println("sendMetrics: handling errors")
 	if len(errs) > 0 {
 		// if there were errors, report stats and log them
 		for _, err := range errs {
