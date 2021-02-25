@@ -164,8 +164,10 @@ func TestCountActiveHandlers(t *testing.T) {
 
 			// Create some test servers that will block until explicitly stopped
 			done := make(chan struct{})
-			blocking := createTestForwardServers(t, 3, func(_ []*metricpb.Metric) {
+			blocking := createTestForwardServers(t, 3, func(ms []*metricpb.Metric) {
+				t.Logf("would forward %d metrics", len(ms))
 				<-done
+				t.Logf("forward handler done")
 			})
 			defer stopTestForwardServers(blocking)
 			// put all of the servers into a ring
